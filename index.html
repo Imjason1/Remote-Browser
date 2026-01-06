@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<meta charset="UTF-8">
+<title>Remote Browser</title>
+
+<style>
+html, body {
+  margin: 0;
+  height: 100%;
+  background: black;
+}
+
+#toolbar {
+  height: 40px;
+  background: #111;
+  display: flex;
+}
+
+#url {
+  flex: 1;
+  margin: 6px;
+}
+
+#screen {
+  width: 100%;
+  height: calc(100% - 40px);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <input id="url" placeholder="Search or enter URL" />
+</div>
+
+<img id="screen" />
+
+<script>
+const ws = new WebSocket(`ws://${location.host}`);
+const img = document.getElementById("screen");
+const urlInput = document.getElementById("url");
+
+ws.binaryType = "blob";
+
+ws.onmessage = e => {
+  img.src = URL.createObjectURL(e.data);
+};
+
+function mapCoords(e) {
+  const r = img.getBoundingClientRect();
+  const scaleX = 1280 / r.width;
+  const scaleY = 720 / r.height;
+
+  // Preserve aspect ratio
+  const x = Math.floor((e.clientX - r.left) * scaleX);
+  const y = Math.floor((e.clientY - r.top) * scaleY);
+
+  return { x, y };
+}
+
+
+// Disable image dragging/selecting
+img.addEventListener("dragstart", e => e.preventDefault());
+img.addEventListener("selectstart", e => e.preventDefault());
+
+img.addEventListener("touchstart", e => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  dragging = true;
+  ws.send(JSON.stringify({ type: "mousedown", ...mapCoords(touch) }));
+});
+
+img.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (!dragging) return;
+  const touch = e.touches[0];
+  ws.send(JSON.stringify({ type: "mousemove", ...mapCoords(touch) }));
+});
+
+img.addEventListener("touchend", e => {
+  e.preventDefault();
+  dragging = false;
+  ws.send(JSON.stringify({ type: "mouseup" }));
+});
+
+
+let dragging = false;
+
+img.addEventListener("mousedown", e => {
+  dragging = true;
+  ws.send(JSON.stringify({ type: "mousedown" }));
+});
+
+img.addEventListener("mouseup", e => {
+  dragging = false;
+  ws.send(JSON.stringify({ type: "mouseup" }));
+});
+
+img.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  ws.send(JSON.stringify({
+    type: "mousemove",
+    ...mapCoords(e)
+  }));
+});
+
+img.addEventListener("wheel", e => {
+  ws.send(JSON.stringify({ type: "wheel", delta: e.deltaY }));
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key.length === 1) return;
+  ws.send(JSON.stringify({ type: "keydown", key: e.key }));
+});
+
+document.addEventListener("keyup", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key.length === 1) return;
+  ws.send(JSON.stringify({ type: "keyup", key: e.key }));
+});
+
+document.addEventListener("keypress", e => {
+  if (e.target.tagName === "INPUT") return;
+  ws.send(JSON.stringify({ type: "type", text: e.key }));
+});
+
+urlInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    ws.send(JSON.stringify({
+      type: "navigate",
+      url: urlInput.value
+    }));
+  }
+});
+</script>
+
+</body>
+</html>
