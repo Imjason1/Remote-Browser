@@ -1,14 +1,18 @@
 {
   "name": "remote-browser",
-  "type": "commonjs"
   "version": "1.0.0",
+  "description": "Remote browser via Playwright + WebSockets",
   "main": "server.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.15.1",
-    "playwright": "^1.42.0"
+    "ws": "^8.13.0",
+    "playwright": "^1.45.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
