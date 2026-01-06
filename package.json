@@ -1,7 +1,6 @@
 {
   "name": "remote-browser",
   "version": "1.0.0",
-  "description": "Remote browser via Playwright + WebSockets",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -9,10 +8,9 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.13.0",
-    "playwright": "^1.45.0"
-  },
-  "engines": {
-    "node": ">=18"
+    "body-parser": "^1.20.2",
+    "playwright": "^1.44.0",
+    "ws": "^8.14.0",
+    "uuid": "^9.0.0"
   }
 }
